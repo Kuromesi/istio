@@ -135,6 +135,10 @@ type DiscoveryServer struct {
 	DiscoveryStartTime time.Time
 
 	krtDebugger *krt.DebugHandler
+
+	// added by asm
+
+	// end added by asm
 }
 
 // NewDiscoveryServer creates DiscoveryServer that sources data from Pilot's internal mesh data structures

@@ -590,6 +590,10 @@ func (s *Server) initKubeClient(args *PilotArgs) error {
 	return nil
 }
 
+func (s *Server) KubeClient() kubelib.Client {
+	return s.kubeClient
+}
+
 // A single container can't have two readiness probes. Make this readiness probe a generic one
 // that can handle all istiod related readiness checks including webhook, gRPC etc.
 // The "http" portion of the readiness check is satisfied by the fact we've started listening on
@@ -670,6 +674,8 @@ func (s *Server) initIstiodAdminServer(args *PilotArgs, whc func() map[string]st
 
 	// Readiness Handler.
 	s.httpMux.HandleFunc("/ready", s.istiodReadyHandler)
+
+	s.initAnalyze()
 
 	return nil
 }

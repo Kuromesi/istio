@@ -43,6 +43,7 @@ import (
 	"istio.io/istio/pilot/pkg/util/protoconv"
 	v3 "istio.io/istio/pilot/pkg/xds/v3"
 	"istio.io/istio/pkg/config"
+	"istio.io/istio/pkg/config/describe"
 	"istio.io/istio/pkg/config/schema/resource"
 	"istio.io/istio/pkg/config/xds"
 	istiolog "istio.io/istio/pkg/log"
@@ -221,6 +222,8 @@ func (s *DiscoveryServer) AddDebugHandlers(mux, internalMux *http.ServeMux, enab
 	s.addDebugHandler(mux, internalMux, "/debug/mcsz", "List information about Kubernetes MCS services", s.mcsz)
 
 	s.addDebugHandler(mux, internalMux, "/debug/list", "List all supported debug commands in json", s.list)
+
+	s.addDebugHandler(mux, internalMux, "/debug/analyze/workload", "Analyze configs attached to a workload", s.analyzePushContextForPod)
 }
 
 func (s *DiscoveryServer) addDebugHandler(mux *http.ServeMux, internalMux *http.ServeMux,
@@ -1101,6 +1104,30 @@ func (s *DiscoveryServer) errorHandler(w http.ResponseWriter, proxyID string, co
 		_, _ = w.Write([]byte("Proxy not connected to this Pilot instance. It may be connected to another instance.\n"))
 		return
 	}
+}
+
+func (s *DiscoveryServer) analyzePushContextForPod(w http.ResponseWriter, req *http.Request) {
+	ps := s.Env.PushContext()
+	name := req.URL.Query().Get("name")
+	namespace := req.URL.Query().Get("namespace")
+	clusterId := req.URL.Query().Get("cluster")
+	if name == "" || namespace == "" || clusterId == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("name, namespace, and cluster are required"))
+		return
+	}
+
+	pb := NewConnBuilder(s.Clients())
+	proxy, err := pb.BuildProxy(name, namespace)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	analyzeContext := describe.NewDescribeContext(s.Env, ps, proxy)
+	res := describe.DescribeAll(analyzeContext)
+	writeJSON(w, res, req)
 }
 
 // jsonMarshalProto wraps a proto.Message so it can be marshaled with the standard encoding/json library

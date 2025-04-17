@@ -45,6 +45,7 @@ import (
 	"istio.io/istio/pkg/activenotifier"
 	"istio.io/istio/pkg/adsc"
 	"istio.io/istio/pkg/config/analysis/incluster"
+	"istio.io/istio/pkg/config/describe/store"
 	"istio.io/istio/pkg/config/schema/collections"
 	"istio.io/istio/pkg/config/schema/gvr"
 	"istio.io/istio/pkg/config/validation/agent"
@@ -120,7 +121,7 @@ func (s *Server) initConfigController(args *PilotArgs) error {
 	}
 
 	// Wrap the config controller with a cache.
-	aggregateConfigController, err := configaggregate.MakeCache(s.ConfigStores)
+	aggregateConfigController, err := store.MakeCache(s.ConfigStores)
 	if err != nil {
 		return err
 	}

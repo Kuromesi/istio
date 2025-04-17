@@ -37,6 +37,10 @@ var (
 	loggingOptions = log.DefaultOptions()
 )
 
+func ServerArgs() *bootstrap.PilotArgs {
+	return serverArgs
+}
+
 // NewRootCommand returns the root cobra command of pilot-discovery.
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{

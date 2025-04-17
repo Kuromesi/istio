@@ -314,13 +314,30 @@ func NewDelayedInformer[T controllers.ComparableObject](
 	if watcher == nil {
 		log.Fatal("NewDelayedInformer called without a CrdWatcher enabled")
 	}
-	delay := newDelayedFilter(gvr, watcher)
+	// delay := newDelayedFilter(gvr, watcher)
+	delay := &fakeDelayedFilter{gvr: gvr}
+
 	inf := func() informerfactory.StartableInformer {
 		opts := ToOpts(c, gvr, filter)
 		opts.InformerType = informerType
 		return kubeclient.GetInformerFiltered[T](c, opts, gvr)
 	}
 	return newDelayedInformer[T](gvr, inf, delay, filter)
+}
+
+type fakeDelayedFilter struct {
+	gvr schema.GroupVersionResource
+}
+
+func (d *fakeDelayedFilter) HasSynced() bool {
+	return true
+}
+
+func (d *fakeDelayedFilter) KnownOrCallback(f func(stop <-chan struct{})) bool {
+	if d.gvr.Resource == "proxyconfigs" || d.gvr.Resource == "workloadgroups" {
+		return false
+	}
+	return true
 }
 
 // NewUntypedInformer returns an untyped client for a given GVR. This is read-only.
